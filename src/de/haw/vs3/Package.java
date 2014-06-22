@@ -13,7 +13,7 @@ public final class Package {
 
     private String payload;
 
-    private int staticNo;
+    private int nextSlotNo;
 
     private long timestamp;
 
@@ -28,7 +28,7 @@ public final class Package {
         bb.get(payloadBuffer);
         newPackage.payload = new String(payloadBuffer);
 
-        newPackage.staticNo = bb.get();
+        newPackage.nextSlotNo = bb.get();
 
         newPackage.timestamp = bb.getLong();
 
@@ -45,7 +45,7 @@ public final class Package {
         System.arraycopy(payloadStrBytes, 0, payloadBytes, 0, 23);
         bb.put(payloadBytes);
 
-        bb.put((byte) staticNo);
+        bb.put((byte) nextSlotNo);
 
         bb.putLong(timestamp);
 
@@ -68,12 +68,12 @@ public final class Package {
         this.payload = payload;
     }
 
-    public int getStaticNo() {
-        return staticNo;
+    public int getNextSlotNo() {
+        return nextSlotNo;
     }
 
-    public void setStaticNo(int staticNo) {
-        this.staticNo = staticNo;
+    public void setNextSlotNo(int nextSlotNo) {
+        this.nextSlotNo = nextSlotNo;
     }
 
     public long getTimestamp() {

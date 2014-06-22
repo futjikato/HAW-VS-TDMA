@@ -51,7 +51,7 @@ dataSource="java -cp /Users/moritzspindelhirn/HAW-VS-TDMA/datasource datasource.
 #
 # Example: stationCmd="java aufgabe4.MyStation $interfaceName $mcastAddress $receivePort $stationClass"
 ########################################################################################################
-stationCmd="java -cp /Users/moritzspindelhirn/HAW-VS-TDMA/out/production/HAW-VS-TDMA de.haw.vs3.Station $interfaceName $mcastAddress $receivePort $stationClass"
+stationCmd="java -cp /Users/moritzspindelhirn/HAW-VS-TDMA/out/production/HAW-VS-TDMA de.haw.vs3.Station $interfaceName $mcastAddress $receivePort $stationClass $UTCoffsetMs $teamNo $i"
 
 
 printUsage() {

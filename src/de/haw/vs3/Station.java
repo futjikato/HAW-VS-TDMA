@@ -14,6 +14,12 @@ public class Station {
         final String address = args[1];
         final int port = Integer.parseInt(args[2]);
         final char stationClass = args[3].charAt(0);
+        final int utcOffset = Integer.parseInt(args[4]);
+        final int teamNo = Integer.parseInt(args[5]);
+        final int stationNo = Integer.parseInt(args[6]);
+
+        Reader reader = new Reader();
+        reader.start();
 
         try {
             NetworkInterface networkInterface = NetworkInterface.getByName(netInterfaceName);
@@ -27,7 +33,15 @@ public class Station {
             receiveSocket.joinGroup(group, networkInterface);
 
             Sender sender = new Sender(sendSocket, stationClass);
-            Receiver receiver = new Receiver(receiveSocket);
+            sender.setTime(System.currentTimeMillis() + utcOffset);
+            sender.setTeamNo(teamNo);
+            sender.setStationNo(stationNo);
+            sender.setReader(reader);
+
+            Receiver receiver = new Receiver(receiveSocket, sender);
+
+            sender.start();
+            receiver.start();
         } catch (Exception e) {
             System.err.println("Error creating network stuff");
             e.printStackTrace();
