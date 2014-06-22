@@ -24,8 +24,6 @@ public final class Sender extends Thread {
 
     private Set<Integer> reservedSlots;
 
-    private long timestamp;
-
     private Random rng;
 
     private int teamNo;
@@ -35,8 +33,8 @@ public final class Sender extends Thread {
     private Reader reader;
 
     private int nextSlot;
-    private int lastSlot;
-    private long frameStartTime;
+    private int timeOffset;
+    private int currentSlot;
 
     public Sender(MulticastSocket socket, char stationClass) {
         this.socket = socket;
@@ -47,11 +45,29 @@ public final class Sender extends Thread {
     }
 
     public void run() {
-        while(!isInterrupted()) {
+        try {
             waitForNextFrame();
-            sendPackage();
+            currentSlot = getRandomFreeSlot();
+            while(!isInterrupted()) {
+
+                if(reservedSlots.contains(currentSlot)) {
+                    currentSlot = getRandomFreeSlot();
+                }
+
+                if(currentSlot == nextSlot) {
+                    sendPackage();
+                    waitForNextFrame();
+                } else {
+                    waitForNextSlot();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Station out.");
         }
     }
+
+
 
     private void sendPackage() {
         try {
@@ -65,22 +81,44 @@ public final class Sender extends Thread {
 
     }
 
-    private void waitForNextFrame() {
-        
+    private void waitForNextSlot() {
+        long waitTime = Station.getTime(timeOffset) % FRAME_LENGTH_MS % (FRAME_LENGTH_MS / SLOT_AMOUNT);
+        waitTime += (FRAME_LENGTH_MS / SLOT_AMOUNT / 2);
 
-        // time till sending next slot
+        try {
+            sleep(waitTime);
+        } catch (InterruptedException e) {
+            System.err.println("Station interrupt.");
+            interrupt();
+        }
+    }
+
+    private void waitForNextFrame() {
+        // wait
+        long waitTime = Station.getTime(timeOffset) % FRAME_LENGTH_MS;
+        waitTime += (FRAME_LENGTH_MS / SLOT_AMOUNT / 2);
+
+        try {
+            sleep(waitTime);
+        } catch (InterruptedException e) {
+            System.err.println("Station interrupt.");
+            interrupt();
+        }
+
+        // new frame ... reset reserved slots
+        reservedSlots.clear();
     }
 
     public void addReservedSlot(int slotNo) {
         reservedSlots.add(slotNo);
     }
 
-    public void syncTime(long timestamp) {
-        this.timestamp = (timestamp + this.timestamp) / 2;
+    public void syncTime(int offset) {
+        this.timeOffset = (offset + this.timeOffset) / 2;
     }
 
-    public void setTime(long time) {
-        timestamp = time;
+    public void setOffset(int offset) {
+        this.timeOffset = offset;
     }
 
     public void setStationNo(int stationNo) {
@@ -99,15 +137,13 @@ public final class Sender extends Thread {
         String dsStr = reader.getDatasourceString();
         String finalPayload = payload.concat(dsStr);
 
-        // save current slot to calculate time left in this frame
-        lastSlot = nextSlot;
         // get next free slot
         nextSlot = getRandomFreeSlot();
 
         pack.setNextSlotNo(nextSlot);
         pack.setPayload(finalPayload);
         pack.setStaticClass(stationClass);
-        pack.setTimestamp(timestamp);
+        pack.setTimestamp(Station.getTime(timeOffset));
 
         return pack;
     }

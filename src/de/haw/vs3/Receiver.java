@@ -42,7 +42,7 @@ public final class Receiver extends Thread {
         sender.addReservedSlot(packet.getNextSlotNo());
 
         if(packet.getStaticClass() == 'A') {
-            sender.syncTime(packet.getTimestamp());
+            sender.syncTime(Station.getOffset(packet.getTimestamp()));
         }
     }
 }

@@ -1,6 +1,8 @@
 package de.haw.vs3;
 
 import java.net.*;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * @author moritzspindelhirn
@@ -33,7 +35,7 @@ public class Station {
             receiveSocket.joinGroup(group, networkInterface);
 
             Sender sender = new Sender(sendSocket, stationClass);
-            sender.setTime(System.currentTimeMillis() + utcOffset);
+            sender.setOffset(utcOffset);
             sender.setTeamNo(teamNo);
             sender.setStationNo(stationNo);
             sender.setReader(reader);
@@ -46,6 +48,17 @@ public class Station {
             System.err.println("Error creating network stuff");
             e.printStackTrace();
         }
+    }
+
+    public static long getTime(int offset) {
+        // get time in UTC
+        Date d = new Date();
+        return d.getTime() + offset;
+    }
+
+    public static int getOffset(long timestamp) {
+        Date d = new Date();
+        return (int)(timestamp - d.getTime());
     }
 
 }
