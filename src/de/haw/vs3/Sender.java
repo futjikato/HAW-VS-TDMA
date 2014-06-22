@@ -133,7 +133,7 @@ public final class Sender extends Thread {
         Package pack = new Package();
 
         // might be too large but the right amount will be send because of length check in Package class
-        String payload = "team 9-";
+        String payload = String.format("team %d-%d", teamNo, stationNo);
         String dsStr = reader.getDatasourceString();
         String finalPayload = payload.concat(dsStr);
 

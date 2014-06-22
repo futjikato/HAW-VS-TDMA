@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Reader extends Thread {
 
-    private String datasourceString;
+    private String datasourceString = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
     final Lock lock = new ReentrantLock();
 
