@@ -34,7 +34,7 @@ public class Station {
             sendSocket.joinGroup(group, networkInterface);
             receiveSocket.joinGroup(group, networkInterface);
 
-            Sender sender = new Sender(sendSocket, stationClass);
+            Sender sender = new Sender(Inet4Address.getByName(address), port, sendSocket, stationClass);
             sender.setOffset(utcOffset);
             sender.setTeamNo(teamNo);
             sender.setStationNo(stationNo);
