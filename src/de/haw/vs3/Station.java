@@ -24,17 +24,14 @@ public class Station {
         reader.start();
 
         try {
-            NetworkInterface networkInterface = NetworkInterface.getByName(netInterfaceName);
-
-            SocketAddress group = new InetSocketAddress(address, port);
+            SocketAddress sockAddress = new InetSocketAddress(address, port);
 
             MulticastSocket sendSocket = new MulticastSocket();
-            MulticastSocket receiveSocket = new MulticastSocket();
+            MulticastSocket receiveSocket = new MulticastSocket(port);
 
-            sendSocket.joinGroup(group, networkInterface);
-            receiveSocket.joinGroup(group, networkInterface);
+            receiveSocket.joinGroup(InetAddress.getByName(address));
 
-            Sender sender = new Sender(Inet4Address.getByName(address), port, sendSocket, stationClass);
+            Sender sender = new Sender(sockAddress, sendSocket, stationClass);
             sender.setOffset(utcOffset);
             sender.setTeamNo(teamNo);
             sender.setStationNo(stationNo);

@@ -1,5 +1,6 @@
 package de.haw.vs3;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -20,9 +21,11 @@ public final class Sender extends Thread {
 
     private final static int SLOT_AMOUNT = 25;
 
-    private final InetAddress address;
+    private InetAddress address;
 
-    private final int port;
+    private int port;
+
+    private SocketAddress socketAddress;
 
     private MulticastSocket socket;
 
@@ -43,11 +46,14 @@ public final class Sender extends Thread {
     private int sendSlot;
     private int currentSlot;
 
-    public Sender(InetAddress address, int port, MulticastSocket socket, char stationClass) {
+    public Sender(SocketAddress sockAddress, MulticastSocket socket, char stationClass) throws IOException {
         this.socket = socket;
+        this.socket.setTimeToLive(1);
+
         this.stationClass = stationClass;
-        this.address = address;
-        this.port = port;
+        // this.address = address;
+        // this.port = port;
+        this.socketAddress = sockAddress;
 
         this.reservedSlots = new CopyOnWriteArraySet<Integer>();
         this.rng = new Random();
@@ -88,7 +94,7 @@ public final class Sender extends Thread {
     private void sendPackage() {
         try {
             Package pack = createpackage();
-            DatagramPacket packet = new DatagramPacket(new byte[0], 0, address, port);
+            DatagramPacket packet = new DatagramPacket(new byte[0], 0, socketAddress);
             packet.setData(pack.getByteArray());
             socket.send(packet);
         } catch (Exception e) {
@@ -102,6 +108,7 @@ public final class Sender extends Thread {
         long waitTime = (FRAME_LENGTH_MS / SLOT_AMOUNT) - (Station.getTime(timeOffset) % (FRAME_LENGTH_MS / SLOT_AMOUNT));
         waitTime -= (FRAME_LENGTH_MS / SLOT_AMOUNT / 2);
 
+        // if no time is passed we would wait 0 ms ... that should not happen ;)
         if(waitTime <= 0) {
             waitTime += (FRAME_LENGTH_MS / SLOT_AMOUNT);
         }
@@ -153,8 +160,8 @@ public final class Sender extends Thread {
     }
 
     public void syncTime(int offset) {
-        System.out.println(String.format("Synctime : timeOffset = (%d + %d) / 2 ( => %d )", offset, timeOffset, (offset + timeOffset) / 2));
-        timeOffset = (offset + timeOffset) / 2;
+        System.out.println(String.format("Synctime : timeOffset = (%d - %d) / 2 ( => %d )", offset, timeOffset, (offset - timeOffset) / 2));
+        timeOffset = (offset - timeOffset) / 2;
     }
 
     public void setOffset(int offset) {
