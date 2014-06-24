@@ -1,6 +1,8 @@
 package de.haw.vs3;
 
 import java.io.IOException;
+import java.lang.Runnable;
+import java.lang.Thread;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -9,6 +11,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Sender
@@ -33,7 +36,9 @@ public final class Sender extends Thread {
 
     private Set<Integer> reservedSlots;
 
-    private Random rng;
+    private synchronized Random rng;
+
+    private ReentrantLock lock;
 
     private int teamNo;
 
@@ -43,11 +48,12 @@ public final class Sender extends Thread {
 
     private int nextSlot;
     private int timeOffset;
-    private int sendSlot;
+    private synchronized int sendSlot;
     private int currentSlot;
 
     public Sender(SocketAddress sockAddress, MulticastSocket socket, char stationClass) throws IOException {
         this.socket = socket;
+        this.lock = new ReentrantLock();
         this.socket.setTimeToLive(1);
 
         this.stationClass = stationClass;
@@ -65,11 +71,46 @@ public final class Sender extends Thread {
             sendSlot = getRandomFreeSlot();
             while(!isInterrupted()) {
 
-                if(currentSlot == SLOT_AMOUNT) {
+                SlotThread st = new SlotThread(this, SLOT_AMOUNT);
+                st.start();
+
+                waitForNextFrame();
+
+                /*if(currentSlot == SLOT_AMOUNT) {
                     System.out.println("New Frame");
                     resetFrame();
+                }*/
+
+                /*if(reservedSlots.contains(sendSlot)) {
+                    System.out.println("Collision -> new slot");
+                    sendSlot = getRandomFreeSlot();
                 }
 
+                if(sendSlot == currentSlot) {
+                    System.out.println("Send");
+                    sendPackage();
+                }*/
+
+
+//                waitForNextSlot();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Station out.");
+        }
+    }
+
+    private class SlotThread extends Thread{
+        private Sender sender;
+        private int slotAmount;
+
+        public SlotThread(Sender sender, int numberOfSlots){
+            this.sender = sender;
+            this.slotAmount = numberOfSlots;
+        }
+
+        public void run(){
+            for (int slotCount = 0; slotCount < slotAmount; slotCount++){
                 if(reservedSlots.contains(sendSlot)) {
                     System.out.println("Collision -> new slot");
                     sendSlot = getRandomFreeSlot();
@@ -80,23 +121,20 @@ public final class Sender extends Thread {
                     sendPackage();
                 }
 
-
                 waitForNextSlot();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Station out.");
+
         }
     }
-
-
 
     private void sendPackage() {
         try {
             Package pack = createpackage();
             DatagramPacket packet = new DatagramPacket(new byte[0], 0, socketAddress);
             packet.setData(pack.getByteArray());
+            lock.lock();
             socket.send(packet);
+            lock.unlock();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -113,7 +151,7 @@ public final class Sender extends Thread {
             waitTime += (FRAME_LENGTH_MS / SLOT_AMOUNT);
         }
 
-        System.out.println(String.format("[SLOT %d] It´s %d and I wait for %d ms", currentSlot, Station.getTime(timeOffset), waitTime));
+        System.out.println(String.format("[SLOT %d] It is %d and I wait for %d ms", currentSlot, Station.getTime(timeOffset), waitTime));
 
         currentSlot++;
 
@@ -131,7 +169,7 @@ public final class Sender extends Thread {
         // jump to middle of slot
         waitTime += (FRAME_LENGTH_MS / SLOT_AMOUNT / 2);
 
-        System.out.println(String.format("[FRAME] It´s %d and I wait for %d ms", Station.getTime(timeOffset), waitTime));
+        System.out.println(String.format("[FRAME] It is %d and I wait for %d ms", Station.getTime(timeOffset), waitTime));
 
         resetFrame();
 
