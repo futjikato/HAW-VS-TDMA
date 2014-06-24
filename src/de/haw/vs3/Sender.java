@@ -36,7 +36,7 @@ public final class Sender extends Thread {
 
     private Set<Integer> reservedSlots;
 
-    private synchronized Random rng;
+    private Random rng;
 
     private ReentrantLock lock;
 
@@ -48,7 +48,7 @@ public final class Sender extends Thread {
 
     private int nextSlot;
     private int timeOffset;
-    private synchronized int sendSlot;
+    private int sendSlot;
     private int currentSlot;
 
     public Sender(SocketAddress sockAddress, MulticastSocket socket, char stationClass) throws IOException {
@@ -65,7 +65,8 @@ public final class Sender extends Thread {
         this.rng = new Random();
     }
 
-    public void run() {
+    @Override
+	public void run() {
         try {
             waitForNextFrame();
             sendSlot = getRandomFreeSlot();
@@ -109,11 +110,17 @@ public final class Sender extends Thread {
             this.slotAmount = numberOfSlots;
         }
 
-        public void run(){
+        @Override
+		public void run(){
             for (int slotCount = 0; slotCount < slotAmount; slotCount++){
                 if(reservedSlots.contains(sendSlot)) {
                     System.out.println("Collision -> new slot");
-                    sendSlot = getRandomFreeSlot();
+                    try {
+						sendSlot = getRandomFreeSlot();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
                 }
 
                 if(sendSlot == currentSlot) {
