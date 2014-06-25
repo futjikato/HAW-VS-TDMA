@@ -24,12 +24,16 @@ public class Station {
         reader.start();
 
         try {
+            NetworkInterface networkInterface = NetworkInterface.getByName(netInterfaceName);
+
             SocketAddress sockAddress = new InetSocketAddress(address, port);
 
             MulticastSocket sendSocket = new MulticastSocket();
-            MulticastSocket receiveSocket = new MulticastSocket(port);
+            sendSocket.setNetworkInterface(networkInterface);
 
+            MulticastSocket receiveSocket = new MulticastSocket(port);
             receiveSocket.joinGroup(InetAddress.getByName(address));
+            receiveSocket.setNetworkInterface(networkInterface);
 
             Sender sender = new Sender(sockAddress, sendSocket, stationClass);
             sender.setOffset(utcOffset);
