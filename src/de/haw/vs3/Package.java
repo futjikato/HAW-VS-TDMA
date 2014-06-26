@@ -38,11 +38,11 @@ public final class Package {
     public byte[] getByteArray() {
         ByteBuffer bb = ByteBuffer.allocate(34);
 
-        bb.putChar(staticClass);
+        bb.put((byte)staticClass);
 
-        byte[] payloadBytes = new byte[23];
+        byte[] payloadBytes = new byte[24];
         byte[] payloadStrBytes = payload.getBytes();
-        System.arraycopy(payloadStrBytes, 0, payloadBytes, 0, 23);
+        System.arraycopy(payloadStrBytes, 0, payloadBytes, 0, 24);
         bb.put(payloadBytes);
 
         bb.put((byte) nextSlotNo);

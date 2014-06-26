@@ -4,11 +4,6 @@ import java.net.*;
 import java.util.Calendar;
 import java.util.Date;
 
-/**
- * @author moritzspindelhirn
- * @todo Documentation
- * @category de.haw.vs3
- */
 public class Station {
 
     public static void main(String[] args) {
@@ -17,8 +12,6 @@ public class Station {
         final int port = Integer.parseInt(args[2]);
         final char stationClass = args[3].charAt(0);
         final int utcOffset = Integer.parseInt(args[4]);
-        final int teamNo = Integer.parseInt(args[5]);
-        final int stationNo = Integer.parseInt(args[6]);
 
         Reader reader = new Reader();
         reader.start();
@@ -37,8 +30,6 @@ public class Station {
 
             Sender sender = new Sender(sockAddress, sendSocket, stationClass);
             sender.setOffset(utcOffset);
-            sender.setTeamNo(teamNo);
-            sender.setStationNo(stationNo);
             sender.setReader(reader);
 
             Receiver receiver = new Receiver(receiveSocket, sender);

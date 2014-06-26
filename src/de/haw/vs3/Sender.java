@@ -22,11 +22,7 @@ public final class Sender extends Thread {
 
     private final static int FRAME_LENGTH_MS = 1000;
 
-    private final static int SLOT_AMOUNT = 25;
-
-    private InetAddress address;
-
-    private int port;
+    private final static int SLOT_AMOUNT = 26;
 
     private SocketAddress socketAddress;
 
@@ -40,16 +36,22 @@ public final class Sender extends Thread {
 
     private ReentrantLock lock;
 
-    private int teamNo;
-
-    private int stationNo;
-
     private Reader reader;
 
+    /**
+     * slot to send the next package in
+     */
     private int nextSlot;
+
+    /**
+     * Offset relative to UTC
+     */
     private int timeOffset;
+
+    /**
+     * slot to reserve in next package
+     */
     private int sendSlot;
-    private int currentSlot;
 
     public Sender(SocketAddress sockAddress, MulticastSocket socket, char stationClass) throws IOException {
         this.socket = socket;
@@ -57,8 +59,6 @@ public final class Sender extends Thread {
         this.socket.setTimeToLive(1);
 
         this.stationClass = stationClass;
-        // this.address = address;
-        // this.port = port;
         this.socketAddress = sockAddress;
 
         this.reservedSlots = new CopyOnWriteArraySet<Integer>();
@@ -70,30 +70,13 @@ public final class Sender extends Thread {
         try {
             waitForNextFrame();
             sendSlot = getRandomFreeSlot();
+            nextSlot = getRandomFreeSlot();
             while(!isInterrupted()) {
 
-                SlotThread st = new SlotThread(this, SLOT_AMOUNT);
+                SlotThread st = new SlotThread(SLOT_AMOUNT);
                 st.start();
 
                 waitForNextFrame();
-
-                /*if(currentSlot == SLOT_AMOUNT) {
-                    System.out.println("New Frame");
-                    resetFrame();
-                }*/
-
-                /*if(reservedSlots.contains(sendSlot)) {
-                    System.out.println("Collision -> new slot");
-                    sendSlot = getRandomFreeSlot();
-                }
-
-                if(sendSlot == currentSlot) {
-                    System.out.println("Send");
-                    sendPackage();
-                }*/
-
-
-//                waitForNextSlot();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -102,33 +85,31 @@ public final class Sender extends Thread {
     }
 
     private class SlotThread extends Thread{
-        private Sender sender;
         private int slotAmount;
 
-        public SlotThread(Sender sender, int numberOfSlots){
-            this.sender = sender;
+        public SlotThread(int numberOfSlots){
             this.slotAmount = numberOfSlots;
         }
 
         @Override
 		public void run(){
-            for (int slotCount = 0; slotCount < slotAmount; slotCount++){
-                if(reservedSlots.contains(sendSlot)) {
+            for (int slotCount = 1; slotCount < slotAmount; slotCount++){
+                if(reservedSlots.contains(nextSlot)) {
                     System.out.println("Collision -> new slot");
                     try {
-						sendSlot = getRandomFreeSlot();
+                        nextSlot = getRandomFreeSlot();
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
                 }
 
-                if(sendSlot == currentSlot) {
+                if(sendSlot == slotCount) {
                     System.out.println("Send");
                     sendPackage();
+                    break;
                 }
 
-                waitForNextSlot();
+                waitForNextSlot(slotCount);
             }
 
         }
@@ -148,7 +129,7 @@ public final class Sender extends Thread {
 
     }
 
-    private void waitForNextSlot() {
+    private void waitForNextSlot(int currentSlot) {
         //                  SlotTime                    -                   Time that is already passed
         long waitTime = (FRAME_LENGTH_MS / SLOT_AMOUNT) - (Station.getTime(timeOffset) % (FRAME_LENGTH_MS / SLOT_AMOUNT));
         waitTime -= (FRAME_LENGTH_MS / SLOT_AMOUNT / 2);
@@ -159,8 +140,6 @@ public final class Sender extends Thread {
         }
 
         System.out.println(String.format("[SLOT %d] It is %d and I wait for %d ms", currentSlot, Station.getTime(timeOffset), waitTime));
-
-        currentSlot++;
 
         try {
             sleep(waitTime);
@@ -193,9 +172,6 @@ public final class Sender extends Thread {
         sendSlot = nextSlot;
         nextSlot = getRandomFreeSlot();
 
-        // reset slot counter
-        currentSlot = 0;
-
         // clear reserved slots
         reservedSlots.clear();
     }
@@ -213,28 +189,18 @@ public final class Sender extends Thread {
         this.timeOffset = offset;
     }
 
-    public void setStationNo(int stationNo) {
-        this.stationNo = stationNo;
-    }
-
-    public void setTeamNo(int teamNo) {
-        this.teamNo = teamNo;
-    }
-
     private Package createpackage() throws Exception {
         Package pack = new Package();
 
         // might be too large but the right amount will be send because of length check in Package class
-        String payload = String.format("team %d-%d", teamNo, stationNo);
-        String dsStr = reader.getDatasourceString();
-        String finalPayload = payload.concat(dsStr);
+        String finalPayload = reader.getDatasourceString();
 
         // get next free slot
         nextSlot = getRandomFreeSlot();
 
-        pack.setNextSlotNo(nextSlot);
-        pack.setPayload(finalPayload);
         pack.setStaticClass(stationClass);
+        pack.setPayload(finalPayload);
+        pack.setNextSlotNo(nextSlot);
         pack.setTimestamp(Station.getTime(timeOffset));
 
         return pack;
