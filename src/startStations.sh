@@ -29,6 +29,7 @@ firstIndex=$4
 lastIndex=$5
 stationClass=$6
 UTCoffsetMs=$7
+cnt=$4
 
 ########################################################################################################
 # TODO: Enter your team number here
@@ -43,7 +44,7 @@ teamNo="9"
 # Example:    dataSource="~/somewhere/DataSource"
 #         or  dataSource="java -cp . datasource.DataSource"
 ########################################################################################################
-dataSource="java -cp /Users/moritzspindelhirn/HAW-VS-TDMA/datasource datasource.DataSource"
+dataSource="java -cp /home/stud36/abi966/Desktop/HAW-VS-TDMA/datasource datasource.DataSource"
 
 ########################################################################################################
 # TODO: Enter your station's start command.
@@ -51,7 +52,7 @@ dataSource="java -cp /Users/moritzspindelhirn/HAW-VS-TDMA/datasource datasource.
 #
 # Example: stationCmd="java aufgabe4.MyStation $interfaceName $mcastAddress $receivePort $stationClass"
 ########################################################################################################
-stationCmd="java -cp /Users/moritzspindelhirn/HAW-VS-TDMA/out/production/HAW-VS-TDMA de.haw.vs3.Station $interfaceName $mcastAddress $receivePort $stationClass $UTCoffsetMs $teamNo $i"
+stationCmd="java -cp /home/stud36/abi966/Desktop/HAW-VS-TDMA/out/production/HAW-VS-TDMA de.haw.vs3.Station $interfaceName $mcastAddress $receivePort $stationClass $UTCoffsetMs $teamNo $cnt"
 
 
 printUsage() {
@@ -73,6 +74,8 @@ then
 				for i in `seq $firstIndex $lastIndex`
 				do
 					# Launching data source and station.
+					cnt=`expr $cnt + 1`
+					echo $stationCmd
 					$dataSource $teamNo $i | $stationCmd &
 					#
 					# If your are annoyed by all the output, try this instead:
