@@ -33,16 +33,12 @@ public final class Receiver extends Thread {
     }
 
     private void processPackage(Package packet) {
-        System.out.println(String.format("Received message : %s ( Class %s | Send at %d )",
-            packet.getPayload(),
-            packet.getStaticClass(),
-            packet.getTimestamp()));
-
         // inform sender about reserved slot
         sender.addReservedSlot(packet.getNextSlotNo());
 
         if(packet.getStaticClass() == 'A') {
-            sender.syncTime(Station.getOffset(packet.getTimestamp()));
+            long remoteOffset = Station.getOffset(packet.getTimestamp());
+            sender.syncTime(remoteOffset);
         }
     }
 }

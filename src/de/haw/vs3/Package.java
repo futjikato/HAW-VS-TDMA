@@ -22,15 +22,15 @@ public final class Package {
 
         Package newPackage = new Package();
 
-        newPackage.staticClass = bb.getChar();
+        newPackage.staticClass = (char)bb.get();
 
         byte[] payloadBuffer = new byte[23];
         bb.get(payloadBuffer);
         newPackage.payload = new String(payloadBuffer);
 
-        newPackage.nextSlotNo = bb.get();
+        newPackage.nextSlotNo = bb.get(25);
 
-        newPackage.timestamp = bb.getLong();
+        newPackage.timestamp = bb.getLong(26);
 
         return newPackage;
     }

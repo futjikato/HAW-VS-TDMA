@@ -25,8 +25,8 @@ public class Station {
             sendSocket.setNetworkInterface(networkInterface);
 
             MulticastSocket receiveSocket = new MulticastSocket(port);
-            receiveSocket.joinGroup(InetAddress.getByName(address));
             receiveSocket.setNetworkInterface(networkInterface);
+            receiveSocket.joinGroup(InetAddress.getByName(address));
 
             Sender sender = new Sender(sockAddress, sendSocket, stationClass);
             sender.setOffset(utcOffset);
@@ -42,15 +42,13 @@ public class Station {
         }
     }
 
-    public static long getTime(int offset) {
+    public static long getTime(long offset) {
         // get time in UTC
-        Date d = new Date();
-        return d.getTime() + offset;
+        return System.currentTimeMillis() + offset;
     }
 
-    public static int getOffset(long timestamp) {
-        Date d = new Date();
-        return (int)(timestamp - d.getTime());
+    public static long getOffset(long timestamp) {
+        return (timestamp - System.currentTimeMillis());
     }
 
 }
